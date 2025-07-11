@@ -1,6 +1,6 @@
 // src/App.jsx
 import { useState } from "react";
-import Layout from "./Layout";
+import Layout from "./components/Layout";
 import Bills from "./components/Bills";
 import Groceries from "./components/Groceries";
 import Chores from "./components/Chores";
