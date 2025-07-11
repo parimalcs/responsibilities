@@ -1,61 +1,70 @@
-// src/components/Food.jsx
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
-import { ref, onValue, set } from "firebase/database";
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const MEALS = ["Lunch", "Dinner"];
+import { ref, onValue, push, remove } from "firebase/database";
 
 export default function Food() {
-  const [plan, setPlan] = useState({});
+  const [meal, setMeal] = useState("");
+  const [meals, setMeals] = useState([]);
 
   useEffect(() => {
-    const planRef = ref(db, "food");
-    onValue(planRef, (snapshot) => {
-      setPlan(snapshot.val() || {});
+    const foodRef = ref(db, "food");
+    onValue(foodRef, (snap) => {
+      const data = snap.val() || {};
+      const formatted = Object.entries(data).map(([id, val]) => ({
+        id,
+        ...val,
+      }));
+      setMeals(formatted);
     });
   }, []);
 
-  const updateMeal = (day, meal, value) => {
-    set(ref(db, `food/${day}/${meal}`), value);
+  const handleAdd = () => {
+    if (meal.trim()) {
+      push(ref(db, "food"), { name: meal.trim() });
+      setMeal("");
+    }
+  };
+
+  const handleDelete = (id) => {
+    remove(ref(db, `food/${id}`));
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold text-orange-600 mb-4">Weekly Food Planner</h2>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-rose-700">Food Planner</h2>
 
-      <div className="overflow-auto">
-        <table className="min-w-full border text-sm">
-          <thead>
-            <tr className="bg-orange-100">
-              <th className="border px-4 py-2 text-left">Day</th>
-              {MEALS.map((meal) => (
-                <th key={meal} className="border px-4 py-2 text-left">
-                  {meal}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {DAYS.map((day) => (
-              <tr key={day} className="even:bg-gray-50">
-                <td className="border px-4 py-2 font-medium text-gray-700">{day}</td>
-                {MEALS.map((meal) => (
-                  <td key={meal} className="border px-4 py-2">
-                    <input
-                      type="text"
-                      value={plan[day]?.[meal] || ""}
-                      onChange={(e) => updateMeal(day, meal, e.target.value)}
-                      placeholder={`Enter ${meal}`}
-                      className="w-full border p-1 rounded"
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={meal}
+          onChange={(e) => setMeal(e.target.value)}
+          placeholder="e.g. Biriyani for Dinner"
+          className="flex-1 border rounded p-2"
+        />
+        <button
+          onClick={handleAdd}
+          className="bg-rose-600 text-white px-4 py-2 rounded hover:bg-rose-700"
+        >
+          Add
+        </button>
       </div>
+
+      <ul className="space-y-2">
+        {meals.map(({ id, name }) => (
+          <li
+            key={id}
+            className="flex justify-between items-center bg-rose-50 border border-rose-200 rounded p-2"
+          >
+            <span>{name}</span>
+            <button
+              onClick={() => handleDelete(id)}
+              className="text-sm text-rose-600 hover:underline"
+            >
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
