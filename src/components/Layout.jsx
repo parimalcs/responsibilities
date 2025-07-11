@@ -1,61 +1,52 @@
 // src/components/Layout.jsx
 import { useState } from "react";
-import { Menu } from "lucide-react";
 import IdentitySelector from "./IdentitySelector";
+import { Menu } from "lucide-react";
 
-const SECTIONS = ["Bills", "Groceries", "Chores", "Food"];
+const navItems = ["Bills", "Groceries", "Chores", "Food"];
+const names = ["Parimal", "Nitheesh", "Abhilash", "Hamza", "Aadyoth"];
 
-export default function Layout({ active, setActive, children }) {
-  const [open, setOpen] = useState(false);
+const Layout = ({ active, setActive, userName, setUserName, children }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
-      {/* Header with left menu icon and title */}
-      <header className="flex items-center justify-between p-4 relative">
-        <button
-          onClick={() => setOpen(!open)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-gray-200"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-        <div className="text-center w-full">
-          <h1 className="text-5xl font-fancy font-bold">
-            Resp<span className="italic">*</span>nsibilities 💔🥀
-          </h1>
+    <div className="min-h-screen bg-white text-black">
+      <header className="flex justify-between items-center p-4 border-b border-gray-300 relative">
+        <div className="absolute left-4">
+          <IdentitySelector userName={userName} setUserName={setUserName} names={names} />
+        </div>
+        <h1 className="text-2xl font-bold text-center w-full">
+          Resp*nsibilities 💔🥀
+        </h1>
+        <div className="absolute right-4">
+          <button onClick={() => setMenuOpen(!menuOpen)}>
+            <Menu size={24} />
+          </button>
         </div>
       </header>
 
-      {/* Dropdown Menu */}
-      {open && (
-        <nav className="bg-white shadow-md w-40 rounded-md ml-4 mb-6">
-          {SECTIONS.map((s) => (
+      {menuOpen && (
+        <nav className="flex justify-center gap-4 py-4 border-b border-gray-200">
+          {navItems.map((item) => (
             <button
-              key={s}
+              key={item}
               onClick={() => {
-                setActive(s);
-                setOpen(false);
+                setActive(item);
+                setMenuOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 hover:bg-gray-100 ${
-                active === s ? "font-bold text-purple-600" : ""
+              className={`px-4 py-2 rounded-md transition-all duration-200 ${
+                active === item ? "bg-black text-white" : "bg-gray-200"
               }`}
             >
-              {s}
+              {item}
             </button>
           ))}
         </nav>
       )}
 
-      {/* Main Body */}
-      <main className="p-4 sm:p-6 max-w-3xl mx-auto text-center">
-        <IdentitySelector />
-        {active ? (
-          children
-        ) : (
-          <div className="text-gray-400 italic mt-12 text-lg">
-            Select a section from the menu to get started.
-          </div>
-        )}
-      </main>
+      <main className="p-4 max-w-3xl mx-auto w-full">{children}</main>
     </div>
   );
-}
+};
+
+export default Layout;

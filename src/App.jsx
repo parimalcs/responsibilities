@@ -1,35 +1,32 @@
 // src/App.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "./components/Layout";
 import Bills from "./components/Bills";
 import Groceries from "./components/Groceries";
 import Chores from "./components/Chores";
 import Food from "./components/Food";
-import IdentitySelector from "./components/IdentitySelector";
 
 function App() {
-  const [active, setActive] = useState(""); // selected section (Bills, Groceries, etc.)
+  const [active, setActive] = useState("");
   const [userName, setUserName] = useState("");
 
-  const renderSection = () => {
-    switch (active) {
-      case "Bills":
-        return <Bills userName={userName} />;
-      case "Groceries":
-        return <Groceries userName={userName} />;
-      case "Chores":
-        return <Chores userName={userName} />;
-      case "Food":
-        return <Food userName={userName} />;
-      default:
-        return null;
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName");
+    if (storedName) {
+      setUserName(storedName);
     }
+  }, []);
+
+  const components = {
+    Bills: <Bills userName={userName} />,
+    Groceries: <Groceries userName={userName} />,
+    Chores: <Chores userName={userName} />,
+    Food: <Food userName={userName} />,
   };
 
   return (
-    <Layout active={active} setActive={setActive}>
-      <IdentitySelector onChange={setUserName} />
-      {renderSection()}
+    <Layout active={active} setActive={setActive} userName={userName} setUserName={setUserName}>
+      {active && userName ? components[active] : null}
     </Layout>
   );
 }

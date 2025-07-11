@@ -4,83 +4,84 @@ import { db } from "../firebase";
 import { ref, push, onValue, remove } from "firebase/database";
 
 export default function Bills({ userName }) {
-  const [bills, setBills] = useState([]);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [bills, setBills] = useState([]);
+
+  const billsRef = ref(db, "bills");
 
   useEffect(() => {
-    const billsRef = ref(db, "bills");
-    onValue(billsRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      const parsed = Object.entries(data).map(([id, value]) => ({ id, ...value }));
-      setBills(parsed);
+    const unsubscribe = onValue(billsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.entries(data).map(([id, value]) => ({ id, ...value }));
+        setBills(list);
+      } else {
+        setBills([]);
+      }
     });
+    return () => unsubscribe();
   }, []);
 
-  const addBill = () => {
-    if (!name || !amount) return;
-    push(ref(db, "bills"), {
-      name,
-      amount: parseFloat(amount),
-      addedBy: userName || "",
-    });
+  const handleAdd = () => {
+    if (!name || !amount || isNaN(amount)) return;
+    push(billsRef, { name, amount: parseFloat(amount) });
     setName("");
     setAmount("");
   };
 
-  const deleteBill = (id) => {
+  const handleDelete = (id) => {
     remove(ref(db, `bills/${id}`));
   };
 
-  return (
-    <div className="bg-white rounded-2xl shadow-md p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-semibold text-blue-700 mb-4">Bills</h2>
+  const total = bills.reduce((sum, b) => sum + Number(b.amount), 0);
+  const perPerson = total / 5;
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold text-gray-800">💸 Bills</h2>
+
+      <div className="flex gap-2">
         <input
-          type="text"
           placeholder="Bill Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="border p-2 rounded w-full"
+          className="border rounded p-2 w-1/2"
         />
         <input
-          type="number"
           placeholder="Amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="border p-2 rounded w-full"
+          className="border rounded p-2 w-1/2"
         />
-        <button
-          onClick={addBill}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
+        <button onClick={handleAdd} className="bg-blue-500 text-white px-4 py-2 rounded">
           Add
         </button>
       </div>
 
-      {bills.length === 0 ? (
-        <p className="text-gray-500">No bills added yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {bills.map((bill) => (
-            <li
-              key={bill.id}
-              className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded shadow-sm"
-            >
-              <span className="font-medium text-gray-700">
-                {bill.name}: ₹{bill.amount}
-              </span>
+      <ul className="space-y-2">
+        {bills.map((bill) => (
+          <li
+            key={bill.id}
+            className="flex justify-between items-center bg-white shadow rounded p-2"
+          >
+            <span className="font-medium text-gray-700">{bill.name}</span>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-600">₹{bill.amount}</span>
               <button
-                onClick={() => deleteBill(bill.id)}
-                className="text-red-600 text-sm hover:underline"
+                onClick={() => handleDelete(bill.id)}
+                className="text-red-500 text-sm"
               >
                 Delete
               </button>
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="pt-4 border-t text-lg text-gray-700 font-semibold">
+        Total: ₹{total.toFixed(2)} | Each Person Pays: ₹{perPerson.toFixed(2)}
+      </div>
     </div>
   );
 }

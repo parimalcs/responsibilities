@@ -1,70 +1,72 @@
-import { useEffect, useState } from "react";
+// src/components/Food.jsx
+import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { ref, onValue, push, remove } from "firebase/database";
+import { ref, set, onValue } from "firebase/database";
 
-export default function Food() {
-  const [meal, setMeal] = useState("");
-  const [meals, setMeals] = useState([]);
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const MEALS = ["Lunch", "Dinner"];
+
+export default function Food({ userName }) {
+  const [foodPlan, setFoodPlan] = useState({});
+
+  const foodRef = ref(db, "food");
 
   useEffect(() => {
-    const foodRef = ref(db, "food");
-    onValue(foodRef, (snap) => {
-      const data = snap.val() || {};
-      const formatted = Object.entries(data).map(([id, val]) => ({
-        id,
-        ...val,
-      }));
-      setMeals(formatted);
+    const unsubscribe = onValue(foodRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setFoodPlan(data);
+      }
     });
+    return () => unsubscribe();
   }, []);
 
-  const handleAdd = () => {
-    if (meal.trim()) {
-      push(ref(db, "food"), { name: meal.trim() });
-      setMeal("");
-    }
-  };
-
-  const handleDelete = (id) => {
-    remove(ref(db, `food/${id}`));
+  const handleChange = (day, meal, value) => {
+    const updated = {
+      ...foodPlan,
+      [day]: {
+        ...foodPlan[day],
+        [meal]: value,
+      },
+    };
+    setFoodPlan(updated);
+    set(foodRef, updated);
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-rose-700">Food Planner</h2>
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold text-gray-800">🍽️ Food Planner</h2>
 
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={meal}
-          onChange={(e) => setMeal(e.target.value)}
-          placeholder="e.g. Biriyani for Dinner"
-          className="flex-1 border rounded p-2"
-        />
-        <button
-          onClick={handleAdd}
-          className="bg-rose-600 text-white px-4 py-2 rounded hover:bg-rose-700"
-        >
-          Add
-        </button>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white shadow-md rounded">
+          <thead>
+            <tr className="bg-gray-100 text-left">
+              <th className="p-2">Day</th>
+              {MEALS.map((meal) => (
+                <th key={meal} className="p-2">{meal}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {DAYS.map((day) => (
+              <tr key={day} className="border-t">
+                <td className="p-2 font-medium text-gray-700">{day}</td>
+                {MEALS.map((meal) => (
+                  <td key={meal} className="p-2">
+                    <input
+                      type="text"
+                      value={foodPlan?.[day]?.[meal] || ""}
+                      onChange={(e) => handleChange(day, meal, e.target.value)}
+                      className="w-full border px-2 py-1 rounded"
+                      placeholder={`Enter ${meal}`}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      <ul className="space-y-2">
-        {meals.map(({ id, name }) => (
-          <li
-            key={id}
-            className="flex justify-between items-center bg-rose-50 border border-rose-200 rounded p-2"
-          >
-            <span>{name}</span>
-            <button
-              onClick={() => handleDelete(id)}
-              className="text-sm text-rose-600 hover:underline"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

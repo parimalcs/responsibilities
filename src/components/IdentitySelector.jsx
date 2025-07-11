@@ -1,41 +1,37 @@
 // src/components/IdentitySelector.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const NAMES = ["Parimal", "Nitheesh", "Abhilash", "Hamza", "Aadyoth"];
-
-export default function IdentitySelector({ onChange }) {
-  const [name, setName] = useState("");
+const IdentitySelector = ({ selectedName, setSelectedName }) => {
+  const names = ["Parimal", "Nitheesh", "Abhilash", "Hamza", "Aadyoth"];
 
   useEffect(() => {
-    const storedName = localStorage.getItem("userName");
-    if (storedName) {
-      setName(storedName);
-      onChange(storedName);
-    }
+    const stored = localStorage.getItem("flatmateName");
+    if (stored) setSelectedName(stored);
   }, []);
 
   const handleChange = (e) => {
-    const selected = e.target.value;
-    setName(selected);
-    localStorage.setItem("userName", selected);
-    onChange(selected);
+    const name = e.target.value;
+    setSelectedName(name);
+    localStorage.setItem("flatmateName", name);
   };
 
   return (
-    <div className="flex items-center gap-2 mb-6">
-      <label className="text-gray-700 font-semibold">Your Name:</label>
+    <div className="text-sm mt-2">
+      <label className="mr-2 font-semibold text-gray-700">You are:</label>
       <select
-        value={name}
+        value={selectedName}
         onChange={handleChange}
-        className="border p-2 rounded bg-white shadow"
+        className="border border-gray-300 rounded px-2 py-1"
       >
-        <option value="">-- Select --</option>
-        {NAMES.map((n) => (
-          <option key={n} value={n}>
-            {n}
+        <option value="">Select your name</option>
+        {names.map((name) => (
+          <option key={name} value={name}>
+            {name}
           </option>
         ))}
       </select>
     </div>
   );
-}
+};
+
+export default IdentitySelector;
